@@ -1,0 +1,94 @@
+import uuid
+
+from sqlalchemy import (
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    String,
+    Text,
+    Time,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
+
+from backend.app.core.database import Base
+
+
+class ScheduleRequest(Base):
+    __tablename__ = "schedule_requests"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+    )
+
+    company_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("companies.id"),
+        nullable=False,
+        index=True,
+    )
+
+    service_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("services.id"),
+        nullable=False,
+        index=True,
+    )
+
+    requested_date = Column(
+        Date,
+        nullable=False,
+    )
+
+    preferred_start_time = Column(
+        Time,
+        nullable=True,
+    )
+
+    preferred_end_time = Column(
+        Time,
+        nullable=True,
+    )
+
+    message = Column(
+        Text,
+        nullable=True,
+    )
+
+    status = Column(
+        String,
+        nullable=False,
+        default="pending",
+        index=True,
+    )
+
+    external_user_id = Column(
+        String,
+        nullable=True,
+        index=True,
+    )
+
+    customer_name = Column(
+        String,
+        nullable=True,
+    )
+
+    customer_email = Column(
+        String,
+        nullable=True,
+    )
+
+    customer_phone = Column(
+        String,
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
