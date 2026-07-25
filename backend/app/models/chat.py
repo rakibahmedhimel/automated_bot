@@ -5,6 +5,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    JSON,
     String,
     Text,
     func,
@@ -52,6 +53,11 @@ class ChatSession(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+    pending_action = Column(
+        JSON,
+        nullable=True,
     )
 
 

@@ -1,12 +1,19 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatSessionCreate(BaseModel):
     external_user_id: str | None = None
     title: str | None = None
+
+
+class ChatSessionUpdate(BaseModel):
+    title: str = Field(
+        min_length=2,
+        max_length=80,
+    )
 
 
 class ChatSessionResponse(BaseModel):
@@ -23,6 +30,9 @@ class ChatSessionResponse(BaseModel):
 
 class ChatMessageCreate(BaseModel):
     content: str
+    customer_name: str | None = None
+    customer_email: str | None = None
+    customer_phone: str | None = None
 
 
 class ChatMessageResponse(BaseModel):

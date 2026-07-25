@@ -1,9 +1,11 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, time
 from uuid import UUID
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.app.models.appointment import Appointment
+from backend.app.models.company import Company
 from backend.app.models.service import Service
 from backend.app.services.availability_service import (
     get_available_slots,
@@ -20,7 +22,16 @@ def create_appointment(
     customer_name: str | None = None,
     customer_email: str | None = None,
     customer_phone: str | None = None,
+    commit: bool = True,
 ):
+    company = (
+        db.query(Company)
+        .filter(Company.id == company_id)
+        .first()
+    )
+    if not company:
+        return None, "Company not found"
+
     service = (
         db.query(Service)
         .filter(
@@ -34,12 +45,15 @@ def create_appointment(
     if not service:
         return None, "Service not found"
 
-    available_slots = get_available_slots(
-        db=db,
-        company_id=company_id,
-        service_id=service_id,
-        requested_date=appointment_date,
-    )
+    try:
+        available_slots = get_available_slots(
+            db=db,
+            company_id=company_id,
+            service_id=service_id,
+            requested_date=appointment_date,
+        )
+    except ValueError as exc:
+        return None, str(exc)
 
     if available_slots is None:
         return None, "Company or service not found"
@@ -74,9 +88,12 @@ def create_appointment(
     db.add(appointment)
 
     try:
-        db.commit()
+        if commit:
+            db.commit()
+        else:
+            db.flush()
         db.refresh(appointment)
-    except Exception:
+    except SQLAlchemyError:
         db.rollback()
         return None, "Unable to create appointment"
 

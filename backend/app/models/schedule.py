@@ -12,6 +12,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from backend.app.core.database import Base
 
@@ -133,4 +134,10 @@ class ScheduleOverride(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+    periods = relationship(
+        "ScheduleOverridePeriod",
+        cascade="all, delete-orphan",
+        order_by="ScheduleOverridePeriod.start_time",
     )

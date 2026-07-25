@@ -1,4 +1,5 @@
 from datetime import date, datetime, time
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -40,7 +41,12 @@ class AppointmentResponse(BaseModel):
 
 
 class AppointmentStatusUpdate(BaseModel):
-    status: str
+    status: Literal[
+        "confirmed",
+        "cancelled",
+        "completed",
+        "no_show",
+    ]
 
 
 class AppointmentCancel(BaseModel):

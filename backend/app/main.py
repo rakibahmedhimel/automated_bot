@@ -19,12 +19,17 @@ from backend.app.routers.chat import (
 from backend.app.routers.companies import (
     router as companies_router,
 )
+from backend.app.routers.customer_conversations import (
+    admin_router as admin_customer_conversations_router,
+    router as customer_conversations_router,
+)
 from backend.app.routers.schedule_requests import (
     router as schedule_requests_router,
 )
 from backend.app.routers.services import (
     router as services_router,
 )
+from backend.app.routers.superadmin import router as superadmin_router
 
 app = FastAPI(
     title="Slotely Booking API",
@@ -49,3 +54,6 @@ app.include_router(schedule_requests_router)
 app.include_router(admin_schedule_router)
 app.include_router(admin_dashboard_router)
 app.include_router(chat_router)
+app.include_router(customer_conversations_router)
+app.include_router(admin_customer_conversations_router)
+app.include_router(superadmin_router)

@@ -12,6 +12,7 @@ from backend.app.models.schedule import (
     WeeklySchedule,
 )
 from backend.app.models.service import Service
+from backend.app.utils.date_utils import is_past_date
 
 
 def get_available_slots(
@@ -31,6 +32,11 @@ def get_available_slots(
 
     if not company:
         return None
+
+    if is_past_date(requested_date, company.timezone):
+        raise ValueError(
+            "The requested date cannot be in the past"
+        )
 
     service = (
         db.query(Service)
@@ -133,7 +139,7 @@ def get_available_slots(
         minutes=service.buffer_minutes,
     )
 
-    available_slots = []
+    available_slots_by_start = {}
 
     for period_start, period_end in schedule_periods:
         current_datetime = datetime.combine(
@@ -147,7 +153,9 @@ def get_available_slots(
         )
 
         while (
-            current_datetime + service_duration
+            current_datetime
+            + service_duration
+            + buffer_duration
             <= period_end_datetime
         ):
             slot_start = current_datetime.time()
@@ -157,6 +165,9 @@ def get_available_slots(
             )
 
             slot_end = slot_end_datetime.time()
+            slot_block_end = (
+                slot_end_datetime + buffer_duration
+            ).time()
 
             slot_blocked = False
 
@@ -164,7 +175,7 @@ def get_available_slots(
                 if (
                     slot_start
                     < schedule_break.end_time
-                    and slot_end
+                    and slot_block_end
                     > schedule_break.start_time
                 ):
                     slot_blocked = True
@@ -175,23 +186,24 @@ def get_available_slots(
                     if (
                         slot_start
                         < appointment.end_time
-                        and slot_end
+                        and slot_block_end
                         > appointment.start_time
                     ):
                         slot_blocked = True
                         break
 
             if not slot_blocked:
-                available_slots.append(
-                    {
-                        "start_time": slot_start,
-                        "end_time": slot_end,
-                    }
-                )
+                available_slots_by_start[slot_start] = {
+                    "start_time": slot_start,
+                    "end_time": slot_end,
+                }
 
             current_datetime += (
                 service_duration
                 + buffer_duration
             )
 
-    return available_slots
+    return [
+        available_slots_by_start[start_time]
+        for start_time in sorted(available_slots_by_start)
+    ]

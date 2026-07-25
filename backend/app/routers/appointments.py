@@ -1,9 +1,13 @@
+from datetime import date
+from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
+from backend.app.models.appointment import Appointment
 from backend.app.schemas.appointment import (
     AppointmentCancel,
     AppointmentCreate,
@@ -92,8 +96,6 @@ def update_appointment_status(
     status_data: AppointmentStatusUpdate,
     db: Session = Depends(get_db),
 ):
-    from backend.app.models.appointment import Appointment
-
     appointment = (
         db.query(Appointment)
         .filter(
@@ -111,8 +113,15 @@ def update_appointment_status(
 
     appointment.status = status_data.status
 
-    db.commit()
-    db.refresh(appointment)
+    try:
+        db.commit()
+        db.refresh(appointment)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to update appointment status",
+        )
 
     return appointment
 
@@ -126,8 +135,6 @@ def get_my_appointments(
     external_user_id: str,
     db: Session = Depends(get_db),
 ):
-    from backend.app.models.appointment import Appointment
-
     return (
         db.query(Appointment)
         .filter(
@@ -150,8 +157,6 @@ def lookup_appointments(
     customer_email: str,
     db: Session = Depends(get_db),
 ):
-    from backend.app.models.appointment import Appointment
-
     return (
         db.query(Appointment)
         .filter(
@@ -165,6 +170,58 @@ def lookup_appointments(
         .all()
     )
 
+
+@router.get(
+    "/",
+    response_model=list[AppointmentResponse],
+)
+def get_appointments(
+    company_id: UUID,
+    appointment_status: (
+        Literal[
+            "confirmed",
+            "cancelled",
+            "completed",
+            "no_show",
+        ]
+        | None
+    ) = Query(default=None, alias="status"),
+    start_date: date | None = None,
+    end_date: date | None = None,
+    db: Session = Depends(get_db),
+):
+    if (
+        start_date is not None
+        and end_date is not None
+        and start_date > end_date
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Start date must be on or before end date",
+        )
+
+    query = db.query(Appointment).filter(
+        Appointment.company_id == company_id,
+    )
+    if appointment_status is not None:
+        query = query.filter(
+            Appointment.status == appointment_status,
+        )
+    if start_date is not None:
+        query = query.filter(
+            Appointment.appointment_date >= start_date,
+        )
+    if end_date is not None:
+        query = query.filter(
+            Appointment.appointment_date <= end_date,
+        )
+
+    return query.order_by(
+        Appointment.appointment_date,
+        Appointment.start_time,
+    ).all()
+
+
 @router.get(
     "/{appointment_id}",
     response_model=AppointmentResponse,
@@ -174,8 +231,6 @@ def get_appointment(
     appointment_id: UUID,
     db: Session = Depends(get_db),
 ):
-    from backend.app.models.appointment import Appointment
-
     appointment = (
         db.query(Appointment)
         .filter(

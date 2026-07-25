@@ -6,6 +6,7 @@ from backend.app.schemas.appointment import (
 from backend.app.schemas.breaks import (
     ScheduleBreakCreate,
     ScheduleBreakResponse,
+    ScheduleBreakUpdate,
 )
 from backend.app.schemas.company import (
     CompanyCreate,
@@ -16,6 +17,7 @@ from backend.app.schemas.schedule import (
     ScheduleOverrideResponse,
     WeeklyScheduleCreate,
     WeeklyScheduleResponse,
+    WeeklyScheduleUpdate,
 )
 from backend.app.schemas.schedule_request import (
     ScheduleRequestCreate,

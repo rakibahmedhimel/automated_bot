@@ -1,9 +1,11 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
+from backend.app.models.company import Company
 from backend.app.models.service import Service
 from backend.app.schemas.service import (
     ServiceCreate,
@@ -27,6 +29,17 @@ def create_service(
     service_data: ServiceCreate,
     db: Session = Depends(get_db),
 ):
+    company = (
+        db.query(Company.id)
+        .filter(Company.id == company_id)
+        .first()
+    )
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Company not found",
+        )
+
     service = Service(
         company_id=company_id,
         name=service_data.name,
@@ -40,8 +53,15 @@ def create_service(
     )
 
     db.add(service)
-    db.commit()
-    db.refresh(service)
+    try:
+        db.commit()
+        db.refresh(service)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to create service",
+        )
 
     return service
 
@@ -124,7 +144,14 @@ def update_service(
     for field, value in update_data.items():
         setattr(service, field, value)
 
-    db.commit()
-    db.refresh(service)
+    try:
+        db.commit()
+        db.refresh(service)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to update service",
+        )
 
     return service

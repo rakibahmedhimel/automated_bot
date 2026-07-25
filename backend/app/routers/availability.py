@@ -22,12 +22,18 @@ def get_available_slots_route(
     requested_date: date,
     db: Session = Depends(get_db),
 ):
-    slots = get_available_slots(
-        db=db,
-        company_id=company_id,
-        service_id=service_id,
-        requested_date=requested_date,
-    )
+    try:
+        slots = get_available_slots(
+            db=db,
+            company_id=company_id,
+            service_id=service_id,
+            requested_date=requested_date,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        )
 
     if slots is None:
         raise HTTPException(

@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 class CompanyBase(BaseModel):
     name: str
     slug: str
+    description: str | None = None
     timezone: str = "Asia/Dhaka"
 
 

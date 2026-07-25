@@ -140,10 +140,71 @@ SCHEDULE_REQUEST_TOOL = {
     },
 }
 
+LIST_CUSTOMER_APPOINTMENTS_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "list_customer_appointments",
+        "description": (
+            "Find this customer's company-scoped appointments "
+            "internally. Never ask the customer for an appointment UUID."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "service_id": {"type": "string"},
+                "appointment_date": {
+                    "type": "string",
+                    "description": "Optional date in YYYY-MM-DD format",
+                },
+                "start_time": {
+                    "type": "string",
+                    "description": "Optional time in HH:MM format",
+                },
+                "customer_email": {"type": "string"},
+            },
+        },
+    },
+}
+
+RESCHEDULE_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "reschedule_appointment",
+        "description": (
+            "Prepare a confirmed appointment to be moved to an "
+            "available replacement time. Requires final confirmation."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "appointment_id": {
+                    "type": "string",
+                    "description": "Internal UUID found with the lookup tool",
+                },
+                "new_date": {
+                    "type": "string",
+                    "description": "New date in YYYY-MM-DD format",
+                },
+                "new_start_time": {
+                    "type": "string",
+                    "description": "New time in HH:MM format",
+                },
+            },
+            "required": [
+                "appointment_id",
+                "new_date",
+                "new_start_time",
+            ],
+        },
+    },
+}
+
 
 AI_TOOLS = [
+    LIST_CUSTOMER_APPOINTMENTS_TOOL,
     AVAILABILITY_TOOL,
     BOOKING_TOOL,
     CANCEL_TOOL,
+    RESCHEDULE_TOOL,
     SCHEDULE_REQUEST_TOOL,
 ]

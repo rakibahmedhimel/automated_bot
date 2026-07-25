@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, String, func
+from sqlalchemy import Boolean, Column, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from backend.app.core.database import Base
@@ -19,6 +19,11 @@ class Company(Base):
     name = Column(
         String,
         nullable=False,
+    )
+
+    description = Column(
+        Text,
+        nullable=True,
     )
 
     slug = Column(

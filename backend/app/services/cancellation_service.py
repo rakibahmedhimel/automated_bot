@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.app.models.appointment import Appointment
@@ -37,7 +38,11 @@ def cancel_appointment(
         cancellation_reason
     )
 
-    db.commit()
-    db.refresh(appointment)
+    try:
+        db.commit()
+        db.refresh(appointment)
+    except SQLAlchemyError:
+        db.rollback()
+        return None, "Unable to cancel appointment"
 
     return appointment, None

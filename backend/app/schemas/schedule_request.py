@@ -23,6 +23,9 @@ class ScheduleRequestStatusUpdate(BaseModel):
         "approved",
         "rejected",
     ]
+    create_appointment: bool = False
+    appointment_date: date | None = None
+    start_time: time | None = None
 
 class ScheduleRequestResponse(BaseModel):
     id: UUID

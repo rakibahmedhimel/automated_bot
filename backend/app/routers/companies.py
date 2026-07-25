@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
@@ -34,10 +35,31 @@ def create_company(
     )
 
     db.add(company)
-    db.commit()
-    db.refresh(company)
+    try:
+        db.commit()
+        db.refresh(company)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to create company",
+        )
 
     return company
+
+
+@router.get(
+    "/",
+    response_model=list[CompanyResponse],
+)
+def get_companies(
+    include_inactive: bool = False,
+    db: Session = Depends(get_db),
+):
+    query = db.query(Company)
+    if not include_inactive:
+        query = query.filter(Company.is_active.is_(True))
+    return query.order_by(Company.created_at).all()
 
 
 @router.get(
@@ -91,7 +113,14 @@ def update_company(
     for field, value in update_data.items():
         setattr(company, field, value)
 
-    db.commit()
-    db.refresh(company)
+    try:
+        db.commit()
+        db.refresh(company)
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to update company",
+        )
 
     return company
